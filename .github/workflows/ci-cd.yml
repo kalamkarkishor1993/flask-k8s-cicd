@@ -40,3 +40,16 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - if: github.ref == 'refs/heads/main'
         run: docker push $IMAGE:${{ github.sha }}
+
+  deploy:
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: helm/kind-action@v1
+      - run: |
+          sed -i "s|IMAGE_PLACEHOLDER|$IMAGE:${{ github.sha }}|" k8s/deployment.yaml
+          kubectl apply -f k8s/
+          kubectl rollout status deploy/flask-app --timeout=120s
+          kubectl get pods
