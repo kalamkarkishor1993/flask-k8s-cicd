@@ -4,6 +4,9 @@ on:
     branches: [main]
   pull_request:
 
+env:
+  IMAGE: ghcr.io/kalamkarkishor1993/flask-k8s-cicd
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -14,14 +17,26 @@ jobs:
           python-version: "3.12"
       - run: pip install -r app/requirements.txt pytest
       - run: cd app && pytest
+
   build:
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     steps:
       - uses: actions/checkout@v4
-      - run: docker build -t flask-app:${{ github.sha }} .
+      - run: docker build -t $IMAGE:${{ github.sha }} .
       - uses: aquasecurity/trivy-action@0.35.0
         with:
-          image-ref: flask-app:${{ github.sha }}
+          image-ref: ${{ env.IMAGE }}:${{ github.sha }}
           severity: CRITICAL
-          exit-code: 1      
+          exit-code: 1
+      - if: github.ref == 'refs/heads/main'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - if: github.ref == 'refs/heads/main'
+        run: docker push $IMAGE:${{ github.sha }}
