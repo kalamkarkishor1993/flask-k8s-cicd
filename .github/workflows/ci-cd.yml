@@ -53,3 +53,7 @@ jobs:
           kubectl apply -f k8s/
           kubectl rollout status deploy/flask-app --timeout=120s
           kubectl get pods
+      - run: |
+          kubectl port-forward svc/flask-app 8080:80 &
+          sleep 5
+          curl -f http://localhost:8080/health
