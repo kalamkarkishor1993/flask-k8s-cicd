@@ -20,4 +20,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: docker build -t flask-app:${{ github.sha }} .
+
+              - uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: flask-app:${{ github.sha }}
+          severity: CRITICAL
+          exit-code: 1
         
